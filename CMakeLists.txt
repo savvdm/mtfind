@@ -5,3 +5,7 @@ project(mtfind)
 
 # add the executable
 add_executable(mtfind mtfind.cpp)
+
+enable_testing()
+
+add_test(NAME wildcard COMMAND ./test.sh "?ad" out/wildcard.out)
