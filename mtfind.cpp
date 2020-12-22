@@ -13,6 +13,12 @@ struct Match {
 };
 typedef std::vector<Match> Matches;
 
+struct Line {
+    str line;
+    int num;
+};
+typedef std::vector<Line> Lines;
+
 void find_matches(const str& line, int line_num, const str& pattern, Matches& matches) {
     int max_index = line.size() - pattern.size();
     for (int i = 0; i <= max_index; ++i) {

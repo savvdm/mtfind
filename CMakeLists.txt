@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 project(mtfind)
 
 # add the executable
-add_executable(mtfind mtfind.cpp)
+add_executable(mtfind mtfind.cpp channel.cpp)
 
 enable_testing()
 
