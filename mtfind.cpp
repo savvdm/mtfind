@@ -10,7 +10,7 @@
 using str = std::string;
 
 struct Match {
-    int line;
+    int line_num;
     int pos;
     str substr;
 };
@@ -85,9 +85,14 @@ int main(int argc, const char* argv[])
  
     worker.join();
 
+    auto pred = [](const Match& a, const Match& b){
+        return a.line_num < b.line_num;
+    };
+    std::stable_sort(out.begin(), out.end(), pred);
+
     std::cout << out.size() << std::endl;
 
     for_each(out.begin(), out.end(), [](const Match& m) {
-        std::cout << m.line << " " << m.pos << " " << m.substr << std::endl; 
+        std::cout << m.line_num << " " << m.pos << " " << m.substr << std::endl;
     });
 }
