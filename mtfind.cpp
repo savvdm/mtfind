@@ -3,6 +3,9 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <thread>
+
+#include "channel.h"
 
 using str = std::string;
 
@@ -13,13 +16,15 @@ struct Match {
 };
 typedef std::vector<Match> Matches;
 
-struct Line {
+struct Input {
+    str pattern;
     str line;
-    int num;
-};
-typedef std::vector<Line> Lines;
+    int line_num;
 
-void find_matches(const str& line, int line_num, const str& pattern, Matches& matches) {
+    void Find(Matches& matches);
+};
+
+void Input::Find(Matches& matches) {
     int max_index = line.size() - pattern.size();
     for (int i = 0; i <= max_index; ++i) {
         int pos = 0;
@@ -49,8 +54,6 @@ int main(int argc, const char* argv[])
         return 2;
     }
 
-    std::vector<Match> matches;
-
     std::ifstream fs;
     fs.open(argv[1]);
     if (fs.fail()) {
@@ -58,14 +61,33 @@ int main(int argc, const char* argv[])
         return 3;
     }
 
+    Channel<Input> in;
+    Matches out;
+    std::mutex m;
+
+    std::thread worker([&in, &out, &m] {
+        Input input;
+        while (in.Read(input)) {
+            //std::cerr << "Read line: " << input.line << std::endl;
+            Matches matches;
+            input.Find(matches);
+            std::lock_guard<std::mutex> lk(m);
+            out.insert(out.end(), matches.begin(), matches.end());
+        }
+    });
+
     str line;
     for (int num = 1; std::getline(fs, line); ++num) {
-        find_matches(line, num, pattern, matches);
+        in.Write({pattern, line, num});
+        //std::cerr << "Wrote line: " << line << std::endl;
     }
+    in.Close();
  
-    std::cout << matches.size() << std::endl;
+    worker.join();
 
-    for_each(matches.begin(), matches.end(), [](const Match& m) { 
+    std::cout << out.size() << std::endl;
+
+    for_each(out.begin(), out.end(), [](const Match& m) {
         std::cout << m.line << " " << m.pos << " " << m.substr << std::endl; 
     });
 }

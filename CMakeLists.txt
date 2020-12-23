@@ -3,8 +3,10 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name
 project(mtfind)
 
-# add the executable
-add_executable(mtfind mtfind.cpp channel.cpp)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+add_executable(mtfind mtfind.cpp)
+target_link_libraries(mtfind PRIVATE Threads::Threads)
 
 enable_testing()
 
