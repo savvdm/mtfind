@@ -65,16 +65,20 @@ int main(int argc, const char* argv[])
     Matches out;
     std::mutex m;
 
-    std::thread worker([&in, &out, &m] {
-        Input input;
-        while (in.Read(input)) {
-            //std::cerr << "Read line: " << input.line << std::endl;
-            Matches matches;
-            input.Find(matches);
-            std::lock_guard<std::mutex> lk(m);
-            out.insert(out.end(), matches.begin(), matches.end());
-        }
-    });
+    std::vector<std::thread> workers;
+    auto count = std::thread::hardware_concurrency();
+    for (auto i = 0; i < count; ++i) {
+        workers.emplace(workers.end(), std::thread([&in, &out, &m] {
+            Input input;
+            while (in.Read(input)) {
+                //std::cerr << "Read line: " << input.line << std::endl;
+                Matches matches;
+                input.Find(matches);
+                std::lock_guard<std::mutex> lk(m);
+                out.insert(out.end(), matches.begin(), matches.end());
+            }
+        }));
+    }
 
     str line;
     for (int num = 1; std::getline(fs, line); ++num) {
@@ -83,12 +87,12 @@ int main(int argc, const char* argv[])
     }
     in.Close();
  
-    worker.join();
+    std::for_each(workers.begin(), workers.end(), [](std::thread& w){ w.join(); });
 
-    auto pred = [](const Match& a, const Match& b){
-        return a.line_num < b.line_num;
-    };
-    std::stable_sort(out.begin(), out.end(), pred);
+    std::stable_sort(out.begin(), out.end(),
+        [](const Match& a, const Match& b){
+            return a.line_num < b.line_num;
+        });
 
     std::cout << out.size() << std::endl;
 
