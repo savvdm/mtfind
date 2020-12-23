@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <cassert>
 
+// Generic Go-like channel
 template<class T>
 class Channel {
 public:
@@ -25,7 +26,7 @@ public:
             }
             cv.wait(lk);
         }
-        item = q.front();
+        item = std::move(q.front());
         q.pop();
         return true;
     }
@@ -42,4 +43,23 @@ private:
     std::mutex m;
     std::condition_variable cv;
     bool closed = false;
+};
+
+using str = std::string;
+
+// Single match
+struct Match {
+    int line_num;
+    int pos;
+    str substr;
+};
+typedef std::vector<Match> Matches;
+
+// Input item
+struct Input {
+    str pattern;
+    str line;
+    int line_num;
+
+    void Find(Matches& matches);
 };

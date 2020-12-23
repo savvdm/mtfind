@@ -5,25 +5,9 @@
 #include <fstream>
 #include <thread>
 
-#include "channel.h"
+#include "mtfind.h"
 
-using str = std::string;
-
-struct Match {
-    int line_num;
-    int pos;
-    str substr;
-};
-typedef std::vector<Match> Matches;
-
-struct Input {
-    str pattern;
-    str line;
-    int line_num;
-
-    void Find(Matches& matches);
-};
-
+// Search input line for matches
 void Input::Find(Matches& matches) {
     int max_index = line.size() - pattern.size();
     for (int i = 0; i <= max_index; ++i) {
@@ -65,6 +49,7 @@ int main(int argc, const char* argv[])
     Matches out;
     std::mutex m;
 
+    // processing input lines
     std::vector<std::thread> workers;
     auto count = std::thread::hardware_concurrency();
     for (auto i = 0; i < count; ++i) {
@@ -80,22 +65,27 @@ int main(int argc, const char* argv[])
         }));
     }
 
+    // reading input
     str line;
     for (int num = 1; std::getline(fs, line); ++num) {
         in.Write({pattern, line, num});
         //std::cerr << "Wrote line: " << line << std::endl;
     }
+
+    // close input channel
     in.Close();
  
+    // wait for workers to finish
     std::for_each(workers.begin(), workers.end(), [](std::thread& w){ w.join(); });
 
+    // sort worker's output
     std::stable_sort(out.begin(), out.end(),
         [](const Match& a, const Match& b){
             return a.line_num < b.line_num;
         });
 
+    // print results
     std::cout << out.size() << std::endl;
-
     for_each(out.begin(), out.end(), [](const Match& m) {
         std::cout << m.line_num << " " << m.pos << " " << m.substr << std::endl;
     });
