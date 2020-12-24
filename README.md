@@ -5,5 +5,5 @@ Patterns may contain '?' wildcard, matching any character.
 
 Limitations:
   * Only ascii charset is supported. 
-  * Matches cannot cross line bondary.
+  * Matches cannot cross line boundary.
   * Matches cannot overlap.
