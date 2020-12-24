@@ -1,11 +1,10 @@
 #include <algorithm>
-#include <vector>
-#include <string>
 #include <iostream>
 #include <fstream>
 #include <thread>
 
 #include "mtfind.h"
+#include "channel.h"
 
 // Search input line for matches
 void Input::Find(Matches& matches) {
