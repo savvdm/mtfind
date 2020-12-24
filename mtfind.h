@@ -14,9 +14,8 @@ typedef std::vector<Match> Matches;
 
 // Input item
 struct Input {
-    str pattern;
     str line;
     int line_num;
 
-    void Find(Matches& matches);
+    void Find(const str& pattern, Matches& matches);
 };

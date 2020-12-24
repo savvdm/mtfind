@@ -7,7 +7,7 @@
 #include "channel.h"
 
 // Search input line for matches
-void Input::Find(Matches& matches) {
+void Input::Find(const str& pattern, Matches& matches) {
     int max_index = line.size() - pattern.size();
     for (int i = 0; i <= max_index; ++i) {
         int pos = 0;
@@ -52,12 +52,12 @@ int main(int argc, const char* argv[])
     std::vector<std::thread> workers;
     auto count = std::thread::hardware_concurrency();
     for (auto i = 0; i < count; ++i) {
-        workers.emplace(workers.end(), std::thread([&in, &out, &m] {
+        workers.emplace(workers.end(), std::thread([&in, &out, &pattern, &m] {
             Input input;
             while (in.Read(input)) {
                 //std::cerr << "Read line: " << input.line << std::endl;
                 Matches matches;
-                input.Find(matches);
+                input.Find(pattern, matches);
                 std::lock_guard<std::mutex> lk(m);
                 out.insert(out.end(), matches.begin(), matches.end());
             }
@@ -67,7 +67,7 @@ int main(int argc, const char* argv[])
     // reading input
     str line;
     for (int num = 1; std::getline(fs, line); ++num) {
-        in.Write({pattern, line, num});
+        in.Write({line, num});
         //std::cerr << "Wrote line: " << line << std::endl;
     }
 
