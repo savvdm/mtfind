@@ -5,7 +5,7 @@ Patterns may contain '?' wildcards, matching any character. Several wildcard cha
 
 ## Usage
 
-   mtfind <input_file> <pattern>
+`mtfind <input_file> <pattern>`
 
 ## Limitations
   * Only ascii charset is supported. 
