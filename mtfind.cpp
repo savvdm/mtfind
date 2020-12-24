@@ -24,6 +24,24 @@ void Input::Find(const str& pattern, Matches& matches) {
     }
 }
 
+void Output::Append(Matches& matches) {
+    std::lock_guard<std::mutex> lk(m);
+    insert(end(), matches.begin(), matches.end());
+}
+
+void Output::Sort() {
+    std::stable_sort(begin(), end(),
+        [](const Match& a, const Match& b){ return a.line_num < b.line_num; }
+    );
+}
+
+void Output::Print() const {
+    std::cout << size() << std::endl;
+    for_each(begin(), end(), [](const Match& m) {
+        std::cout << m.line_num << " " << m.pos << " " << m.substr << std::endl;
+    });
+}
+
 int main(int argc, const char* argv[])
 {
     if (argc < 3) {
@@ -45,21 +63,20 @@ int main(int argc, const char* argv[])
     }
 
     Channel<Input> in;
-    Matches out;
-    std::mutex m;
+    Output out;
 
     // processing input lines
     std::vector<std::thread> workers;
     auto count = std::thread::hardware_concurrency();
     for (auto i = 0; i < count; ++i) {
-        workers.emplace(workers.end(), std::thread([&in, &out, &pattern, &m] {
+        workers.emplace(workers.end(), std::thread([&in, &out, &pattern] {
             Input input;
+            Matches matches;
             while (in.Read(input)) {
                 //std::cerr << "Read line: " << input.line << std::endl;
-                Matches matches;
+                matches.clear();
                 input.Find(pattern, matches);
-                std::lock_guard<std::mutex> lk(m);
-                out.insert(out.end(), matches.begin(), matches.end());
+                out.Append(matches);
             }
         }));
     }
@@ -77,15 +94,9 @@ int main(int argc, const char* argv[])
     // wait for workers to finish
     std::for_each(workers.begin(), workers.end(), [](std::thread& w){ w.join(); });
 
-    // sort worker's output
-    std::stable_sort(out.begin(), out.end(),
-        [](const Match& a, const Match& b){
-            return a.line_num < b.line_num;
-        });
+    // sort matches by line number
+    out.Sort();
 
     // print results
-    std::cout << out.size() << std::endl;
-    for_each(out.begin(), out.end(), [](const Match& m) {
-        std::cout << m.line_num << " " << m.pos << " " << m.substr << std::endl;
-    });
+    out.Print();
 }
