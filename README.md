@@ -1,7 +1,7 @@
 # mtfind
 Simple multi-threaded grep-like utility.
 
-Patterns may contain '?' wildcard, matching any character.
+Patterns may contain '?' wildcards, matching any character. Several wildcard characters in a pattern are supported.
 
 Limitations:
   * Only ascii charset is supported. 
