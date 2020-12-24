@@ -11,6 +11,7 @@ struct Match {
     int pos;
     str substr;
 };
+
 typedef std::vector<Match> Matches;
 
 // Input item
@@ -18,11 +19,12 @@ struct Input {
     str line;
     int line_num;
 
-    void Find(const str& pattern, Matches& matches);
+    // find matches for one line
+    bool Find(const str& pattern, Matches& matches);
 };
 
 // Search results
-class Output: Matches {
+class Results: Matches {
 public:
     void Append(Matches&); // append is synchronized
     void Sort();

@@ -7,8 +7,9 @@
 #include "channel.h"
 
 // Search input line for matches
-void Input::Find(const str& pattern, Matches& matches) {
+bool Input::Find(const str& pattern, Matches& matches) {
     int max_index = line.size() - pattern.size();
+    int found = false;
     for (int i = 0; i <= max_index; ++i) {
         int pos = 0;
         for (; pos < pattern.size(); ++pos) {
@@ -18,24 +19,29 @@ void Input::Find(const str& pattern, Matches& matches) {
             }
         }
         if (pos == pattern.size()) {
+            found = true;
             matches.push_back({ line_num, i + 1, line.substr(i, pos) });
             i += pos - 1; // matches do not overlap
         }
     }
+    return found;
 }
 
-void Output::Append(Matches& matches) {
+// Synchronized append called from multiple worker threads
+void Results::Append(Matches& matches) {
     std::lock_guard<std::mutex> lk(m);
     insert(end(), matches.begin(), matches.end());
 }
 
-void Output::Sort() {
+// Sort results (produced by different threads) by line number
+void Results::Sort() {
     std::stable_sort(begin(), end(),
         [](const Match& a, const Match& b){ return a.line_num < b.line_num; }
     );
 }
 
-void Output::Print() const {
+// Print results
+void Results::Print() const {
     std::cout << size() << std::endl;
     for_each(begin(), end(), [](const Match& m) {
         std::cout << m.line_num << " " << m.pos << " " << m.substr << std::endl;
@@ -63,20 +69,24 @@ int main(int argc, const char* argv[])
     }
 
     Channel<Input> in;
-    Output out;
+    Results out;
 
-    // processing input lines
+    // Multi-threaded search.
+    // Each input line is processed entirely by a single thread,
+    // possibly producing one or more matches.
     std::vector<std::thread> workers;
     auto count = std::thread::hardware_concurrency();
     for (auto i = 0; i < count; ++i) {
         workers.emplace(workers.end(), std::thread([&in, &out, &pattern] {
             Input input;
             Matches matches;
+            // read input until it is closed (and no more items left)
             while (in.Read(input)) {
                 //std::cerr << "Read line: " << input.line << std::endl;
-                matches.clear();
-                input.Find(pattern, matches);
-                out.Append(matches);
+                if (input.Find(pattern, matches)) {
+                    out.Append(matches); // save matches for one line
+                    matches.clear();
+                }
             }
         }));
     }
@@ -88,7 +98,7 @@ int main(int argc, const char* argv[])
         //std::cerr << "Wrote line: " << line << std::endl;
     }
 
-    // close input channel
+    // close input channel, ordering workers to terminate
     in.Close();
  
     // wait for workers to finish
