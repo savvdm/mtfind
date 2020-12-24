@@ -1,2 +1,6 @@
 # mtfind
-Simple muti-threaded grep-like utility
+Simple multi-threaded grep-like utility.
+Patterns may contain '?' wildcard, matching any character. 
+  * Only ascii charset is supported. 
+  * Matches cannot cross line bondary.
+  * Matches cannot overlap.
