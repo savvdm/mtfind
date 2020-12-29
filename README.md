@@ -21,3 +21,5 @@ Patterns may contain '?' wildcards, matching any character. Several wildcard cha
     make
     make test
 ```
+## TODO
+Add batch processing to reduce synchronization overhead.
